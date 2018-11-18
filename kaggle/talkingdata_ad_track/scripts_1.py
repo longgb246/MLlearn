@@ -10,7 +10,7 @@ from __future__ import print_function
 import sys
 import platform
 
-# ----- Necessary -----
+# ------------------------ system platform ------------------------
 # Get the run system platform
 sys_platform = 'mac' if any(list(map(lambda x: x in platform.system().lower(), ('darwin', 'os2', 'os', 'mac')))) else \
     'win' if any(list(map(lambda x: x in platform.system().lower(), ('win32', 'cygwin', 'win')))) else 'other'
@@ -26,7 +26,7 @@ if py_ver == 3:
     long = int
     unicode = int
 
-# ----- Matplotlib -----
+# ------------------------ Matplotlib Setting ------------------------
 if sys_platform == 'win':
     from pylab import mpl
 
@@ -43,6 +43,7 @@ import matplotlib.ticker as ticker
 
 plt.style.use('seaborn')
 
+# ------------------------ Pandas Setting ------------------------
 import pandas as pd
 
 pd.set_option('display.max_rows', 20)
@@ -50,8 +51,8 @@ pd.set_option('display.width', 180)  # 150
 pd.set_option('display.max_columns', 40)
 
 # ------------------------- Use -------------------------
-import numpy as np  # linear algebra
-import pandas as pd  # data processing, CSV file I/O (e.g. pd.read_csv)
+import numpy as np
+import pandas as pd
 import datetime
 import os
 import time
@@ -60,3 +61,12 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 
 # sns.set(rc={'figure.figsize': (12, 5)})
+
+org_path = r'/Users/longguangbin/Work/scripts/kaggle/TalkingDataAdTracking'
+
+for f in os.listdir(org_path):
+    if 'zip' not in f:
+        print(f.ljust(30) + str(round(os.path.getsize(org_path + os.sep + f) / 1000000, 2)) + 'MB')
+
+df_train = pd.read_csv(org_path + os.sep + 'train.csv', nrows=1000000)
+df_test = pd.read_csv(org_path + os.sep + 'test.csv', nrows=1000000)
