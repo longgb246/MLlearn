@@ -51,22 +51,40 @@ pd.set_option('display.width', 180)  # 150
 pd.set_option('display.max_columns', 40)
 
 # ------------------------- Use -------------------------
-import numpy as np
-import pandas as pd
-import datetime
+import lgblearn
+from lgblearn import plot as lpt
 import os
-import time
-
-import matplotlib.pyplot as plt
-import seaborn as sns
-
-# sns.set(rc={'figure.figsize': (12, 5)})
 
 org_path = r'/Users/longguangbin/Work/scripts/kaggle/TalkingDataAdTracking'
+files_list = map(lambda x: org_path + os.sep + x, os.listdir(org_path))
 
-for f in os.listdir(org_path):
-    if 'zip' not in f:
-        print(f.ljust(30) + str(round(os.path.getsize(org_path + os.sep + f) / 1000000, 2)) + 'MB')
+# 检查文件
+lgblearn.eda.summary_files(files_list)
+# 文件结果
+# SIZE       LINES       FILE
+# 6.0KB      0           /Users/longguangbin/Work/scripts/kaggle/TalkingDataAdTracking/.DS_Store
+# 823.28MB   18790470    /Users/longguangbin/Work/scripts/kaggle/TalkingDataAdTracking/test.csv
+# 3.89MB     100001      /Users/longguangbin/Work/scripts/kaggle/TalkingDataAdTracking/train_sample.csv
+# 2.48GB     57537506    /Users/longguangbin/Work/scripts/kaggle/TalkingDataAdTracking/test_supplement.csv
+# 7.02GB     184903891   /Users/longguangbin/Work/scripts/kaggle/TalkingDataAdTracking/train.csv
+# 186.52MB   18790470    /Users/longguangbin/Work/scripts/kaggle/TalkingDataAdTracking/sample_submission.csv
 
 df_train = pd.read_csv(org_path + os.sep + 'train.csv', nrows=1000000)
 df_test = pd.read_csv(org_path + os.sep + 'test.csv', nrows=1000000)
+
+cols = ['ip', 'app', 'device', 'os', 'channel']
+uniques = [len(df_train[col].unique()) for col in cols]
+
+import seaborn as sns
+
+plt.figure(figsize=(15, 8))
+sns.set(font_scale=1.2)
+# ax = sns.barplot(cols, uniques, palette=pal, log=True)
+ax = sns.barplot(cols, uniques, log=True)
+ax.set(xlabel='Feature', ylabel='log(unique count)', title='Number of unique values per feature')
+for p, uniq in zip(ax.patches, uniques):
+    height = p.get_height()
+    ax.text(p.get_x() + p.get_width() / 2., height + 10, uniq, ha="center")
+
+lpt.barplot(cols, uniques, log=True)
+lpt.barplot(cols, uniques)
