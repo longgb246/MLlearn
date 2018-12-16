@@ -146,4 +146,13 @@ def ma1_pre():
     mape, all_data = _cal_mape(ma1_df, input_data, last_date)
     # 1.7148555034637185
 
+
 # 2、使用 ma 算法
+
+
+# qr - quantile regression
+# Koenker, Roger and Kevin F. Hallock. "Quantile Regressioin". Journal of Economic Perspectives, Volume 15, Number 4, Fall 2001, Pages 143–156
+# The LAD model is a special case of quantile regression where q=0.5
+
+
+
