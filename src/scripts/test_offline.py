@@ -6,14 +6,17 @@
 Usage Of 'test_offline' : 
 """
 
+from __future__ import print_function
 import os
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 from dateutil.parser import parse
 import datetime
+import time
 
 import matplotlib.ticker as ticker
+from statsmodels.tsa.arima_model import _arma_predict_out_of_sample
 
 import lgblearn as lg
 
@@ -72,7 +75,9 @@ def plot_pre_real_s(preprocess_data, input_data, pre_data, sku_code, store_id, l
     return fig, ax
 
 
+# 计算mape
 def _cal_mape(pre_data, input_data, last_date):
+    """ pre_data : 'sku_code', 'store_id', 'pre_sale'.  pre_sale is the sum of x days """
     date1 = (parse(last_date) + datetime.timedelta(1)).strftime('%Y-%m-%d')
     date2 = (parse(last_date) + datetime.timedelta(7)).strftime('%Y-%m-%d')
     print(date1, date2)
@@ -85,6 +90,7 @@ def _cal_mape(pre_data, input_data, last_date):
     return mape, all_data
 
 
+# 计算mape
 def cal_mape(pre_data, input_data, last_date):
     """ Calculate the mape. """
     pre_data['pre_sale'] = pre_data['sale_list'].apply(lambda x: sum(eval(x)[:7]))
@@ -92,15 +98,53 @@ def cal_mape(pre_data, input_data, last_date):
     return mape, all_data
 
 
+# ma 预测方法
+def MA_predict(data, p=2, w=None, step=1):
+    """
+
+    :param data: ts data
+    :param p: p parameter of MA
+    :param w: weight of WMA
+    :param step: predict step
+    :return:
+    """
+    # params = [0.5] * order[0]
+    # steps = 3
+    # residuals = [0]
+    # p = order[0]
+    # q = order[1]
+    # k_exog = 0
+    # k_trend = 0
+    # y = a
+    # _arma_predict_out_of_sample(params, steps, residuals, p, q, k_trend, k_exog, endog=y, exog=None, start=len(y))
+    p = min(len(data), p)
+    w = w[::-1] if w is not None else [1.0 / p] * p
+    residuals = [0]
+    q = 0
+    k_exog = 0
+    k_trend = 0
+    res = _arma_predict_out_of_sample(w, step, residuals, p, q, k_trend, k_exog, endog=data)
+    return res
+
+
+def test_ma_predict():
+    data = range(10)
+    p = 7
+    # w = [0.3, 0.7]
+    # MA_predict(data, p, w=w, step=3)
+    MA_predict(data, p, step=7)
+
+
+last_date = '2018-11-28'
+
+# ------------------------------------------------
 input_data = pd.read_table(path + os.sep + 'input_data.tsv')
 preprocess_data = pd.read_table(path + os.sep + 'preprocess_df_11_30.tsv')
 # preprocess_data = pd.read_table(path + os.sep + 'preprocess_df_11_28.tsv')
 pre_data = pd.read_table(path + os.sep + 'pre_data_11_30.tsv')
 # pre_data = pd.read_table(path + os.sep + 'pre_data_11_28.tsv')
-
 preprocess_data = _split_sku(preprocess_data)
-last_date = '2018-11-30'
-# last_date = '2018-11-28'
+# last_date = '2018-11-30'
 
 # ------------------------------------------------
 # sku_code, store_id = ['19847302-3', 'KL3A']  # '2018-11-28'
@@ -122,20 +166,18 @@ all_data.sort_values(['nbs_gap'])
 all_data.sort_values(['gap', 'sale'], ascending=[True, False])
 
 # ------------------------------------------------
+# ------------------------------------------------
+# 实际数据
+input_data = pd.read_table(path + os.sep + 'input_data.tsv')
+# 时序数据
+preprocess_data = pd.read_table(path + os.sep + 'preprocess_df_11_28.tsv')
+preprocess_data = _split_sku(preprocess_data)
 # 训练 - 预测  11-28 的 last 实际
 train_df = pd.read_table(path + os.sep + 'train_df_11_28.tsv')
 target_df = pd.read_table(path + os.sep + 'target_df_11_28.tsv')
 
 train_x_df = train_df[train_df['sku_id'].apply(lambda x: x.split('$')[0] != 'forecast')]
 forecast_x_df = train_df[train_df['sku_id'].apply(lambda x: x.split('$')[0] == 'forecast')]
-
-
-# fig = plt.figure()
-# ax = fig.add_subplot(111)
-# ax2 = ax.twinx()
-# ax.plot(map(lambda x: parse(x), ['2017-01-02','2017-01-04','2017-01-07']), [2,3,2])
-# ax2.plot(map(lambda x: parse(x), ['2017-01-03', '2017-01-05']), [2.67, 4])
-# ax.set_xticks(map(lambda x: parse(x), ['2017-01-02','2017-01-04','2017-01-07']))
 
 
 # 1、上周销量直接出预测
@@ -147,12 +189,20 @@ def ma1_pre():
     # 1.7148555034637185
 
 
-# 2、使用 ma 算法
-
-
-# qr - quantile regression
-# Koenker, Roger and Kevin F. Hallock. "Quantile Regressioin". Journal of Economic Perspectives, Volume 15, Number 4, Fall 2001, Pages 143–156
-# The LAD model is a special case of quantile regression where q=0.5
-
-
-
+# 2、使用 ma / wma 计算方法
+def ma2_pre():
+    date1 = (parse(last_date) - datetime.timedelta(20)).strftime('%Y-%m-%d')
+    ma2_df = preprocess_data[preprocess_data['dt'] >= date1]
+    # run models
+    p = 7
+    res = []
+    t1 = time.time()
+    for i, (key, group) in enumerate(ma2_df.groupby(['sku_code', 'store_id'])):
+        if divmod(i, 10000)[1] == 0:
+            print(i)
+        res.append(list(key) + [float(np.sum(MA_predict(group['sale'].values, p=p, step=7)))])
+    res_pd = pd.DataFrame(res, columns=['sku_code', 'store_id', 'pre_sale'])
+    lg.run_time(t1)
+    # cal mape
+    mape, all_data = _cal_mape(res_pd, input_data, last_date)
+    # 1.8790014802985942
