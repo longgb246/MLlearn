@@ -15,12 +15,12 @@ def two_sum(list_v, sum_v):
 
     # dict search
     for i, x in enumerate(list_v):
-        if sum_v - x > 0:
-            if (v_dict.get(x) is not None) and ([min(x, sum_v - x), max(x, sum_v - x)] not in success_pair):
-                success_pair.append([min(x, sum_v - x), max(x, sum_v - x)])
-            v_tmp = v_dict.get(sum_v - x, [])
-            v_tmp.append(i)
-            v_dict[sum_v - x] = v_tmp
+        # if sum_v - x > 0:
+        if (v_dict.get(x) is not None) and ([min(x, sum_v - x), max(x, sum_v - x)] not in success_pair):
+            success_pair.append([min(x, sum_v - x), max(x, sum_v - x)])
+        v_tmp = v_dict.get(sum_v - x, [])
+        v_tmp.append(i)
+        v_dict[sum_v - x] = v_tmp
 
     # generate all possible
     for min_v, max_v in success_pair:
