@@ -6,8 +6,6 @@
 Usage Of '32_longest_valid_parentheses.py' : 
 """
 
-import numpy as np
-
 
 class Solution(object):
     def longestValidParentheses(self, s):
@@ -16,18 +14,38 @@ class Solution(object):
         :rtype: int
         """
         len_s = len(s)
-        if len_s == 0:
-            return 0
-        s_score = np.zeros(len_s)
-        s_score[0] = 1 if s[0] == '(' else 0
-        for i in range(1, len_s):
-            if ((s[i] == '(') and (s[i - 1] == ')')) or ((s[i] == ')') and (s[i - 1] == '(')):
-                s_score[i] = s_score[i - 1] + 1
-            elif s[i] == '(':
-                s_score[i] = 1
-        max_len = int(s_score.max())
-        res = max_len - 1 if divmod(max_len, 2)[1] == 1 else max_len
-        return res
+        p = [0] * len_s
+        max_len = 0
+        for i in range(len_s - 1)[::-1]:
+            if s[i] == '(' and (i + 1 + p[i + 1]) < len_s and s[i + 1 + p[i + 1]] == ')':
+                p[i] = p[i + 1] + 2
+                if i + 1 + p[i + 1] + 1 < len_s:
+                    p[i] += p[i + 1 + p[i + 1] + 1]
+                max_len = max(max_len, p[i])
+        return max_len
+
+
+# public int longestValidParentheses(String s) {
+# 	char[] chars = s.toCharArray();
+# 	return Math.max(calc(chars, 0, 1, chars.length, '('), calc(chars, chars.length -1, -1, -1, ')'));
+# }
+#
+# private static int calc(char[] chars , int i ,  int flag,int end, char cTem){
+# 	int max = 0, sum = 0, currLen = 0,validLen = 0;
+# 	for (;i != end; i += flag) {
+# 		sum += (chars[i] == cTem ? 1 : -1);
+#           currLen ++;
+# 		if(sum < 0){
+# 			max = max > validLen ? max : validLen;
+# 			sum = 0;
+# 			currLen = 0;
+#             validLen = 0;
+# 		}else if(sum == 0){
+#             validLen = currLen;
+#       }
+# 	}
+# 	return max > validLen ? max : validLen;
+# }
 
 
 def get_test_instance(example=1):

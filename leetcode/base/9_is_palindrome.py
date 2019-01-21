@@ -17,9 +17,13 @@ class Solution(object):
         d, m = divmod(len(x_str), 2)
         res = True
         for i in range(d):
-            if x_str[i] != x_str[-(i+1)]:
+            if x_str[i] != x_str[-(i + 1)]:
                 res = False
                 break
+        return res
+
+    def isPalindrome2(self, x):
+        res = str(x) == str(x)[::-1]
         return res
 
 
