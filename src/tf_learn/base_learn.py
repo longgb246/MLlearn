@@ -66,9 +66,8 @@ def base_1():
     x.initializer.run()
 
 
-# continue..
+# https://tensorflow.google.cn/tutorials/keras/basic_classification
 def base_2():
-    # https://tensorflow.google.cn/tutorials/keras/basic_classification
     fashion_mnist = keras.datasets.fashion_mnist
     (train_images, train_labels), (test_images, test_labels) = fashion_mnist.load_data()
 
@@ -90,7 +89,9 @@ def base_2():
     print('train labels : \n\t', dict(Counter(train_labels)))
     print('test labels : \n\t', dict(Counter(test_labels)))
     print('train images shape : ', train_images.shape)
+    print('train_labels images shape : ', train_labels.shape)
     print('test images shape : ', test_images.shape)
+    print('test_labels images shape : ', test_labels.shape)
 
     # 数据归一化
     train_images = train_images / 255.0
@@ -118,13 +119,27 @@ def base_2():
     #     fname='/Library/Fonts/STHeiti Light.ttc', size=15))
     # fig.suptitle(u'32 幅服饰的图片', y=0.95, fontproperties=font(size=15))
 
+    # 设置模型
     model = keras.Sequential([
         keras.layers.Flatten(input_shape=(28, 28)),
         keras.layers.Dense(128, activation=tf.nn.relu),
         keras.layers.Dense(10, activation=tf.nn.softmax)
     ])
 
-    # https://tensorflow.google.cn/tutorials/keras/basic_classification#build_the_model
+    # 编译模型
+    model.compile(optimizer=tf.train.AdamOptimizer(),
+                  loss='sparse_categorical_crossentropy',
+                  metrics=['accuracy'])
+
+    # 训练模型
+    model.fit(train_images, train_labels, epochs=5)
+
+    # 测试数据的模型表现
+    test_loss, test_acc = model.evaluate(test_images, test_labels)
+    print('Test accuracy:', test_acc)
+
+    predictions = model.predict(test_images)
+    predictions.shape
 
 
 def get_mnist():

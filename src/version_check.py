@@ -24,7 +24,7 @@ if py_ver == 2:
 # python3 set long and unicode
 if py_ver == 3:
     long = int
-    unicode = int
+    unicode = str
 
 # ----- Matplotlib -----
 if sys_platform == 'win':
