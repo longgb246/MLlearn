@@ -8,18 +8,25 @@ Usage Of 'base_learn.py' :
 
 from __future__ import print_function, division
 
-import tensorflow as tf
-from tensorflow import keras
-from tensorflow.examples.tutorials.mnist import input_data
-
-print(tf.__version__)
-
 import numpy as np
+import pandas as pd
 import matplotlib.pyplot as plt
+import seaborn as sns
 from matplotlib.font_manager import FontProperties
 
 from collections import Counter
 from terminaltables import AsciiTable
+
+import warnings
+
+warnings.filterwarnings('ignore')
+
+import tensorflow as tf
+from tensorflow import keras
+from tensorflow.keras import layers
+from tensorflow.examples.tutorials.mnist import input_data
+
+print(tf.__version__)
 
 
 def font(lg='ch', **kwargs):
@@ -66,7 +73,7 @@ def base_1():
     x.initializer.run()
 
 
-# https://tensorflow.google.cn/tutorials/keras/basic_classification
+# 基本分类：https://tensorflow.google.cn/tutorials/keras/basic_classification
 def base_2():
     fashion_mnist = keras.datasets.fashion_mnist
     (train_images, train_labels), (test_images, test_labels) = fashion_mnist.load_data()
@@ -98,32 +105,38 @@ def base_2():
     test_images = test_images / 255.0
 
     # 画其中一幅图
-    fig = plt.figure()
-    ax = fig.add_subplot(111)
-    img1 = ax.imshow(train_images[0], cmap='Blues')
-    fig.colorbar(img1, ax=ax)  # img + ax -> fig 添加 colorbar
-    ax.grid(False)
-    plt.show()
+    def s_plot_one_figure():
+        fig = plt.figure()
+        ax = fig.add_subplot(111)
+        img1 = ax.imshow(train_images[0], cmap='Blues')
+        fig.colorbar(img1, ax=ax)  # img + ax -> fig 添加 colorbar
+        ax.grid(False)
+        plt.show()
+
+    s_plot_one_figure()
 
     # 画前32幅图
-    fig = plt.figure(figsize=(15, 8))
-    for i in range(32):
-        ax = fig.add_subplot(4, 8, i + 1)
-        img1 = ax.imshow(train_images[i], cmap='Blues')
-        ax.set_xticks([])
-        ax.set_yticks([])
-        ax.grid(False)
-        ax.set_xlabel(class_names[train_labels[i]])
-    fig.suptitle('32 Figures Of Clothes', y=0.95, fontsize=15)
-    # fig.suptitle(u'32 幅服饰的图片', y=0.95, fontproperties=FontProperties(
-    #     fname='/Library/Fonts/STHeiti Light.ttc', size=15))
-    # fig.suptitle(u'32 幅服饰的图片', y=0.95, fontproperties=font(size=15))
+    def s_plot_32_figures():
+        fig = plt.figure(figsize=(15, 8))
+        for i in range(32):
+            ax = fig.add_subplot(4, 8, i + 1)
+            img1 = ax.imshow(train_images[i], cmap='Blues')
+            ax.set_xticks([])
+            ax.set_yticks([])
+            ax.grid(False)
+            ax.set_xlabel(class_names[train_labels[i]])
+        fig.suptitle('32 Figures Of Clothes', y=0.95, fontsize=15)
+        # fig.suptitle(u'32 幅服饰的图片', y=0.95, fontproperties=FontProperties(
+        #     fname='/Library/Fonts/STHeiti Light.ttc', size=15))
+        # fig.suptitle(u'32 幅服饰的图片', y=0.95, fontproperties=font(size=15))
 
-    # 设置模型
+    s_plot_32_figures()
+
+    # 设置模型 : 最终要出 10 个分类，所以输出的节点数为 10 个
     model = keras.Sequential([
-        keras.layers.Flatten(input_shape=(28, 28)),
-        keras.layers.Dense(128, activation=tf.nn.relu),
-        keras.layers.Dense(10, activation=tf.nn.softmax)
+        keras.layers.Flatten(input_shape=(28, 28)),  # 扁平化数据
+        keras.layers.Dense(128, activation=tf.nn.relu),  # 128 个节点（或神经元），隐藏层
+        keras.layers.Dense(10, activation=tf.nn.softmax)  # 10 个节点（或神经元）
     ])
 
     # 编译模型
@@ -131,15 +144,257 @@ def base_2():
                   loss='sparse_categorical_crossentropy',
                   metrics=['accuracy'])
 
-    # 训练模型
+    # 训练模型 : TODO - 猜测是不是自动将 labels 进行了转化，计算一个数字与一个向量的 loss，思考一下。
     model.fit(train_images, train_labels, epochs=5)
 
     # 测试数据的模型表现
     test_loss, test_acc = model.evaluate(test_images, test_labels)
     print('Test accuracy:', test_acc)
 
+    # 预测
     predictions = model.predict(test_images)
-    predictions.shape
+    print('Predictions.shape : ', predictions.shape)
+    print('First predict : ', np.argmax(predictions[0]))  # 结果 : 预测值最大的 TODO - 理清楚原因
+    print('First label : ', test_labels[0])
+
+    # 画图看结果
+    def plot_image(i, predictions_array, true_label, img):
+        predictions_array, true_label, img = predictions_array[i], true_label[i], img[i]
+        plt.grid(False)
+        plt.xticks([])
+        plt.yticks([])
+
+        plt.imshow(img, cmap=plt.cm.binary)
+
+        predicted_label = np.argmax(predictions_array)
+        if predicted_label == true_label:
+            color = 'blue'
+        else:
+            color = 'red'
+
+        plt.xlabel("{} {:2.0f}% ({})".format(class_names[predicted_label],  # 预测的label
+                                             100 * np.max(predictions_array),  # 预测为该label的概率
+                                             class_names[true_label]), color=color)  # 实际的label
+
+    def plot_value_array(i, predictions_array, true_label):
+        predictions_array, true_label = predictions_array[i], true_label[i]
+        plt.grid(False)
+        plt.xticks([])
+        plt.yticks([])
+        thisplot = plt.bar(range(10), predictions_array, color="#777777")  # 画出每个类别的概率
+        plt.ylim([0, 1])
+        predicted_label = np.argmax(predictions_array)
+
+        thisplot[predicted_label].set_color('red')  # 预测的标签是red
+        thisplot[true_label].set_color('blue')  # 正确的标签是blue
+
+    def plot_one_acc(i, predictions, test_labels, test_images):
+        plt.figure(figsize=(6, 3))
+        plt.subplot(1, 2, 1)
+        plot_image(i, predictions, test_labels, test_images)
+        plt.subplot(1, 2, 2)
+        plot_value_array(i, predictions, test_labels)
+
+    def plot_multi_acc(row, col, predictions, test_labels, test_images, s=0):
+        num_rows = row
+        num_cols = col
+        num_images = num_rows * num_cols
+        plt.figure(figsize=(2 * 2 * num_cols, 2 * num_rows))
+        for i in range(s, num_images + s):
+            plt.subplot(num_rows, 2 * num_cols, 2 * (i - s) + 1)
+            plot_image(i, predictions, test_labels, test_images)
+            plt.subplot(num_rows, 2 * num_cols, 2 * (i - s) + 2)
+            plot_value_array(i, predictions, test_labels)
+
+    plot_one_acc(12, predictions, test_labels, test_images)
+    plot_multi_acc(5, 3, predictions, test_labels, test_images)
+
+    # 预测单个
+    def predict_one():
+        img = test_images[0]
+        print(img.shape)
+        img = (np.expand_dims(img, 0))
+        print(img.shape)
+
+        predictions_single = model.predict(img)
+        print(predictions_single)
+
+        plot_one_acc(0, predictions_single, test_labels, img)
+
+    predict_one()
+
+
+# 基本文本分类：https://tensorflow.google.cn/tutorials/keras/basic_text_classification
+def base_3():
+    # IMDB 数据集 : 来自互联网电影数据库的 50000 条影评文本。我们将这些影评拆分为训练集（25000 条影评）和测试集（25000 条影评）
+    imdb = keras.datasets.imdb
+    (train_data, train_labels), (test_data, test_labels) = imdb.load_data(num_words=10000)
+    pass
+
+
+# 回归：https://tensorflow.google.cn/tutorials/keras/basic_regression
+def base_4():
+    # Auto MPG 数据集
+    dataset_path = keras.utils.get_file("auto-mpg.data",
+                                        "https://archive.ics.uci.edu/ml/machine-learning-databases/auto-mpg/auto-mpg.data")
+    print(dataset_path)  # '/Users/longguangbin/.keras/datasets/auto-mpg.data'
+    dataset_path = '/Users/longguangbin/.keras/datasets/auto-mpg.data'
+
+    # 读取 Auto MPG 数据集
+    column_names = ['MPG', 'Cylinders', 'Displacement', 'Horsepower', 'Weight',
+                    'Acceleration', 'Model Year', 'Origin']
+    raw_dataset = pd.read_csv(dataset_path, names=column_names,
+                              na_values="?", comment='\t',
+                              sep=" ", skipinitialspace=True)
+    dataset = raw_dataset.copy()
+    dataset.tail()
+
+    # EDA
+    dataset.isna().sum()  # 检查为 null 的个数
+    dataset = dataset.dropna()  # 去掉 null 的行数
+    dataset.index = range(len(dataset))
+    print('dataset columns : ', dataset.columns)
+
+    # 变量转成 one-hot
+    origin = dataset.pop('Origin')
+    dataset['USA'] = (origin == 1) * 1.0
+    dataset['Europe'] = (origin == 2) * 1.0
+    dataset['Japan'] = (origin == 3) * 1.0
+    dataset.tail()
+
+    # 拆分成 train 和 test
+    train_dataset = dataset.sample(frac=0.8, random_state=0)  # 随机抽样
+    test_dataset = dataset.drop(train_dataset.index)
+
+    # 检查数据
+    sns.pairplot(train_dataset[["MPG", "Cylinders", "Displacement", "Weight"]], diag_kind="kde")
+    train_stats = train_dataset.describe()
+    train_stats.pop("MPG")
+    train_stats = train_stats.transpose()
+    pd.set_option('display.max_columns', 40)  # 设置打印宽度
+    print(train_stats)
+
+    # 取出 label 目标变量 - MPG
+    train_labels = train_dataset.pop('MPG')
+    test_labels = test_dataset.pop('MPG')
+
+    def norm(x, train_stats):
+        return (x - train_stats['mean']) / train_stats['std']
+
+    # 标准化数据
+    normed_train_data = norm(train_dataset, train_stats)
+    normed_test_data = norm(test_dataset, train_stats)
+
+    # 简历模型
+    def build_model():
+        model = keras.Sequential([
+            layers.Dense(64, activation=tf.nn.relu, input_shape=[len(train_dataset.keys())]),
+            layers.Dense(64, activation=tf.nn.relu),
+            layers.Dense(1)
+        ])
+
+        optimizer = tf.keras.optimizers.RMSprop(0.001)
+
+        model.compile(loss='mean_squared_error',
+                      optimizer=optimizer,
+                      metrics=['mean_absolute_error', 'mean_squared_error'])
+        return model
+
+    model = build_model()
+    model.summary()  # 查看参数等个数
+
+    example_batch = normed_train_data[:10]
+    example_result = model.predict(example_batch)
+    print(example_result)
+
+    # 训练模型
+    class PrintDot(keras.callbacks.Callback):
+        def on_epoch_end(self, epoch, logs):
+            if epoch % 100 == 0:
+                print('')
+            print('.', end='')
+
+    EPOCHS = 1000
+
+    history = model.fit(normed_train_data, train_labels,
+                        epochs=EPOCHS, validation_split=0.2, verbose=0,
+                        callbacks=[PrintDot()])
+
+    hist = pd.DataFrame(history.history)
+    hist['epoch'] = history.epoch
+    hist.tail()
+
+    # 画出 error 的变化
+    def plot_history(history):
+        hist = pd.DataFrame(history.history)
+        hist['epoch'] = history.epoch
+
+        fig = plt.figure(figsize=(14, 7))
+        ax1 = fig.add_subplot(121)
+        ax1.set_xlabel('Epoch')
+        ax1.set_ylabel('Mean Abs Error [MPG]')
+        ax1.plot(hist['epoch'], hist['mean_absolute_error'], label='Train Error')
+        ax1.plot(hist['epoch'], hist['val_mean_absolute_error'], label='Val Error')
+        ax1.set_ylim([0, 5])
+        ax1.set_title('Mean Abs Error [MPG]')
+        ax1.legend()
+
+        ax2 = fig.add_subplot(122)
+        ax2.set_xlabel('Epoch')
+        ax2.set_ylabel('Mean Square Error [$MPG^2$]')
+        ax2.plot(hist['epoch'], hist['mean_squared_error'], label='Train Error')
+        ax2.plot(hist['epoch'], hist['val_mean_squared_error'], label='Val Error')
+        ax2.set_ylim([0, 20])
+        ax2.set_title('Mean Square Error [$MPG^2$]')
+        ax2.legend()
+
+        plt.tight_layout(rect=(0.05, 0.05, 0.95, 0.95))
+        plt.show()
+
+    plot_history(history)
+    # 图表显示在约100个时期之后，验证错误几乎没有改善，甚至降低
+
+    model = build_model()
+
+    # 提前终止，当验证的loss - val_loss 不再增加的时候
+    early_stop = keras.callbacks.EarlyStopping(monitor='val_loss', patience=10)
+    # The patience parameter is the amount of epochs to check for improvement
+
+    history = model.fit(normed_train_data, train_labels,
+                        epochs=EPOCHS, validation_split=0.2, verbose=0,
+                        callbacks=[early_stop, PrintDot()])
+
+    plot_history(history)
+
+    # 评估
+    loss, mae, mse = model.evaluate(normed_test_data, test_labels, verbose=0)
+    print("Testing set Mean Abs Error: {:5.2f} MPG".format(mae))
+
+    # 做预测
+    def plot_predictions(test_labels, test_predictions):
+        fig = plt.figure()
+        ax = fig.add_subplot(111)
+        ax.scatter(test_labels, test_predictions)
+        ax.set_xlabel('True Values [MPG]')
+        ax.set_ylabel('Predictions [MPG]')
+        ax.axis('equal')
+        ax.axis('square')
+        ax.set_xlim([0, ax.get_xlim()[1]])
+        ax.set_ylim([0, ax.get_ylim()[1]])
+        ax.plot([-100, 100], [-100, 100])
+
+    def plot_error_hist(test_labels, test_predictions):
+        error = test_predictions - test_labels
+        plt.hist(error, bins=25)
+        plt.xlabel("Prediction Error [MPG]")
+        plt.ylabel("Count")
+
+    test_predictions = model.predict(normed_test_data).flatten()
+
+    plot_predictions(test_labels, test_predictions)
+    plot_error_hist(test_labels, test_predictions)
+
+    # 早期停止是防止过度拟合的有用技术。
 
 
 def get_mnist():
