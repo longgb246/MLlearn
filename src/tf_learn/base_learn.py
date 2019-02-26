@@ -38,7 +38,7 @@ def font(lg='ch', **kwargs):
     return font_v
 
 
-# ------------------------------------------------------------
+# -------------------------------------------------------------------------------
 def base_1():
     # 构造器的返回值代表该常量 op 的返回值.
     matrix1 = tf.constant([[3., 3.]])
@@ -73,8 +73,56 @@ def base_1():
     x.initializer.run()
 
 
+def get_mnist():
+    # 读取数据集，第一次TensorFlow会自动下载数据集到下面的路径中, label 采用 one_hot 形式
+    mnist = input_data.read_data_sets('/Users/longguangbin/datasets/mnist', one_hot=True)
+
+    # 1) 获得数据集的个数
+    train_nums = mnist.train.num_examples
+    test_nums = mnist.test.num_examples
+    validation_nums = mnist.validation.num_examples
+    print('MNIST数据集的个数')
+    print('train_nums :', train_nums)
+    print('test_nums :', test_nums)
+    print('validation_nums :', validation_nums)
+
+    # 2) 获得数据值
+    train_data = mnist.train.images  # 所有训练数据
+    val_data = mnist.validation.images  # (5000,784)
+    test_data = mnist.test.images  # (10000,784)
+    print('训练集数据大小：', train_data.shape)
+    print('一副图像的大小：', train_data[0].shape)
+
+    # 3) 获取标签值label=[0,0,...,0,1],是一个1*10的向量
+    train_labels = mnist.train.labels  # (55000,10)
+    val_labels = mnist.validation.labels  # (5000,10)
+    test_labels = mnist.test.labels  # (10000,10)
+    print('训练集标签数组大小：', train_labels.shape)
+    print('一副图像的标签大小：', train_labels[1].shape)
+    print('一副图像的标签值：', train_labels[0])
+
+    # 4) 批量获取数据和标签【使用next_batch(batch_size)】
+    batch_size = 100  # 每次批量训练100幅图像
+    batch_xs, batch_ys = mnist.train.next_batch(batch_size)
+    print('使用mnist.train.next_batch(batch_size)批量读取样本')
+    print('批量读取100个样本:数据集大小=', batch_xs.shape)
+    print('批量读取100个样本:标签集大小=', batch_ys.shape)
+    # xs是图像数据(100,784);ys是标签(100,10)
+
+    # 5) 显示图像
+    plt.figure()
+    for i in range(100):
+        im = train_data[i].reshape(28, 28)
+        im = batch_xs[i].reshape(28, 28)
+        plt.imshow(im, 'gray')
+        plt.pause(0.0000001)
+    plt.show()
+
+
+# -------------------------------------------------------------------------------
+
 # 基本分类：https://tensorflow.google.cn/tutorials/keras/basic_classification
-def base_2():
+def base_A_2():
     fashion_mnist = keras.datasets.fashion_mnist
     (train_images, train_labels), (test_images, test_labels) = fashion_mnist.load_data()
 
@@ -225,7 +273,7 @@ def base_2():
 
 
 # 基本文本分类：https://tensorflow.google.cn/tutorials/keras/basic_text_classification
-def base_3():
+def base_A_3():
     # IMDB 数据集 : 来自互联网电影数据库的 50000 条影评文本。我们将这些影评拆分为训练集（25000 条影评）和测试集（25000 条影评）
     imdb = keras.datasets.imdb
     (train_data, train_labels), (test_data, test_labels) = imdb.load_data(num_words=10000)
@@ -233,7 +281,7 @@ def base_3():
 
 
 # 回归：https://tensorflow.google.cn/tutorials/keras/basic_regression
-def base_4():
+def base_A_4():
     # Auto MPG 数据集
     dataset_path = keras.utils.get_file("auto-mpg.data",
                                         "https://archive.ics.uci.edu/ml/machine-learning-databases/auto-mpg/auto-mpg.data")
@@ -397,47 +445,65 @@ def base_4():
     # 早期停止是防止过度拟合的有用技术。
 
 
-def get_mnist():
-    # 读取数据集，第一次TensorFlow会自动下载数据集到下面的路径中, label 采用 one_hot 形式
-    mnist = input_data.read_data_sets('/Users/longguangbin/datasets/mnist', one_hot=True)
+# 过拟合、欠拟合：https://tensorflow.google.cn/tutorials/keras/overfit_and_underfit
+def base_A_5():
+    # 欠拟合: 1.模型不够强大，2.过于正则化，3.根本没有训练足够长的时间
+    # 防止过拟合: 1.使用更多训练数据, 2.正则化, (权重正则化, 丢弃)
 
-    # 1) 获得数据集的个数
-    train_nums = mnist.train.num_examples
-    test_nums = mnist.test.num_examples
-    validation_nums = mnist.validation.num_examples
-    print('MNIST数据集的个数')
-    print('train_nums :', train_nums)
-    print('test_nums :', test_nums)
-    print('validation_nums :', validation_nums)
+    NUM_WORDS = 10000
 
-    # 2) 获得数据值
-    train_data = mnist.train.images  # 所有训练数据
-    val_data = mnist.validation.images  # (5000,784)
-    test_data = mnist.test.images  # (10000,784)
-    print('训练集数据大小：', train_data.shape)
-    print('一副图像的大小：', train_data[0].shape)
+    (train_data, train_labels), (test_data, test_labels) = keras.datasets.imdb.load_data(num_words=NUM_WORDS)
 
-    # 3) 获取标签值label=[0,0,...,0,1],是一个1*10的向量
-    train_labels = mnist.train.labels  # (55000,10)
-    val_labels = mnist.validation.labels  # (5000,10)
-    test_labels = mnist.test.labels  # (10000,10)
-    print('训练集标签数组大小：', train_labels.shape)
-    print('一副图像的标签大小：', train_labels[1].shape)
-    print('一副图像的标签值：', train_labels[0])
+    def multi_hot_sequences(sequences, dimension):
+        # Create an all-zero matrix of shape (len(sequences), dimension)
+        results = np.zeros((len(sequences), dimension))
+        for i, word_indices in enumerate(sequences):
+            results[i, word_indices] = 1.0  # set specific indices of results[i] to 1s
+        return results
 
-    # 4) 批量获取数据和标签【使用next_batch(batch_size)】
-    batch_size = 100  # 每次批量训练100幅图像
-    batch_xs, batch_ys = mnist.train.next_batch(batch_size)
-    print('使用mnist.train.next_batch(batch_size)批量读取样本')
-    print('批量读取100个样本:数据集大小=', batch_xs.shape)
-    print('批量读取100个样本:标签集大小=', batch_ys.shape)
-    # xs是图像数据(100,784);ys是标签(100,10)
+    train_data = multi_hot_sequences(train_data, dimension=NUM_WORDS)
+    test_data = multi_hot_sequences(test_data, dimension=NUM_WORDS)
+    pass
 
-    # 5) 显示图像
-    plt.figure()
-    for i in range(100):
-        im = train_data[i].reshape(28, 28)
-        im = batch_xs[i].reshape(28, 28)
-        plt.imshow(im, 'gray')
-        plt.pause(0.0000001)
-    plt.show()
+
+# 保存模型：https://tensorflow.google.cn/tutorials/keras/save_and_restore_models
+def base_A_6():
+    (train_images, train_labels), (test_images, test_labels) = tf.keras.datasets.mnist.load_data()
+
+    train_labels = train_labels[:1000]
+    test_labels = test_labels[:1000]
+
+    train_images = train_images[:1000].reshape(-1, 28 * 28) / 255.0
+    test_images = test_images[:1000].reshape(-1, 28 * 28) / 255.0
+
+    # Returns a short sequential model
+    def create_model():
+        model = tf.keras.models.Sequential([
+            keras.layers.Dense(512, activation=tf.nn.relu, input_shape=(784,)),
+            keras.layers.Dropout(0.2),
+            keras.layers.Dense(10, activation=tf.nn.softmax)
+        ])
+
+        model.compile(optimizer=tf.keras.optimizers.Adam(),
+                      loss=tf.keras.losses.sparse_categorical_crossentropy,
+                      metrics=['accuracy'])
+
+        return model
+
+    # Create a basic model instance
+    model = create_model()
+    model.summary()
+    pass
+
+
+def base_B_1():
+    tf.enable_eager_execution()
+
+
+def base_B_2():
+    tf.enable_eager_execution()
+
+# 1、搞定自营预测的流程
+# 2、tf学习精通
+# 3、算法 - nlp、推荐、cv等等
+# 4、java
