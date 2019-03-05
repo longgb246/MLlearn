@@ -18,9 +18,9 @@ class Solution(object):
         max_len = 0
         for i in range(len_s - 1)[::-1]:
             if s[i] == '(' and (i + 1 + p[i + 1]) < len_s and s[i + 1 + p[i + 1]] == ')':
-                p[i] = p[i + 1] + 2
+                p[i] = p[i + 1] + 2  # 内部连接括号长度
                 if i + 1 + p[i + 1] + 1 < len_s:
-                    p[i] += p[i + 1 + p[i + 1] + 1]
+                    p[i] += p[i + 1 + p[i + 1] + 1]  # 外部连接括号长度
                 max_len = max(max_len, p[i])
         return max_len
 
