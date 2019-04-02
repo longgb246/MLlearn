@@ -499,7 +499,7 @@ def base_A_6():
 def base_B_1():
     tf.enable_eager_execution()
 
-
+    
 def base_B_2():
     tf.enable_eager_execution()
 

@@ -9,25 +9,16 @@ Usage Of 'test_ma' :
 from statsmodels.tsa.arima_model import _arma_predict_out_of_sample
 
 
-def MA_predict(data, p, w=None, step=1):
-    """
+def wma(data, p, w=None, step=1):
+    """ Use the data series to calculate the wma series.
 
-    :param data: ts data
-    :param p: p parameter of MA
-    :param w: weight of WMA
-    :param step: predict step
-    :return:
+    :param list data: ts data
+    :param int p: p parameter of MA, use the length of data (from right)
+    :param list w: weight of WMA
+    :param int step: predict step
+    :return: the predict of wma
     """
-    # params = [0.5] * order[0]
-    # steps = 3
-    # residuals = [0]
-    # p = order[0]
-    # q = order[1]
-    # k_exog = 0
-    # k_trend = 0
-    # y = a
-    # _arma_predict_out_of_sample(params, steps, residuals, p, q, k_trend, k_exog, endog=y, exog=None, start=len(y))
-    w = w[::-1] or [1.0 / p] * p
+    w = w[::-1] if isinstance(w, list) else [1.0 / p] * int(p)
     residuals = [0]
     q = 0
     k_exog = 0
@@ -39,8 +30,8 @@ def MA_predict(data, p, w=None, step=1):
 def test_wma():
     data = range(10)
     p = 2
-    w = [0.3, 0.7]
-    MA_predict(data, p, w=w, step=3)
+    w = [0.3, 0.2]
+    wma(data, p, w=w, step=3)
 
 
 if __name__ == '__main__':

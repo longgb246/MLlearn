@@ -45,6 +45,9 @@ class MultilayerPerceptron(object):
     def fit(self, X, y):
         self._initialize_weights(X, y)
 
+        print('X.shape :', X.shape)
+        print('y.shape :', y.shape)
+
         for i in range(self.n_iterations):
             # ..............
             #  Forward Pass
@@ -53,9 +56,18 @@ class MultilayerPerceptron(object):
             # HIDDEN LAYER
             hidden_input = X.dot(self.W) + self.w0
             hidden_output = self.hidden_activation(hidden_input)
+
+            print('X.dot(self.W).shape :', X.dot(self.W).shape)
+            print('self.w0.shape :', self.w0.shape)
+            print('hidden_input.shape :', hidden_input.shape)
+            print('hidden_output.shape :', hidden_output.shape)
+
             # OUTPUT LAYER
             output_layer_input = hidden_output.dot(self.V) + self.v0
             y_pred = self.output_activation(output_layer_input)
+
+            print('output_layer_input.shape :', output_layer_input.shape)
+            print('y_pred.shape :', y_pred.shape)
 
             # ...............
             #  Backward Pass
@@ -66,6 +78,14 @@ class MultilayerPerceptron(object):
             grad_wrt_out_l_input = self.loss.gradient(y, y_pred) * self.output_activation.gradient(output_layer_input)
             grad_v = hidden_output.T.dot(grad_wrt_out_l_input)
             grad_v0 = np.sum(grad_wrt_out_l_input, axis=0, keepdims=True)
+
+            print('self.loss.gradient(y, y_pred).shape :', self.loss.gradient(y, y_pred).shape)
+            print('self.output_activation.gradient(output_layer_input).shape :',
+                  self.output_activation.gradient(output_layer_input).shape)
+            print('grad_wrt_out_l_input.shape :', grad_wrt_out_l_input.shape)
+            print('grad_v.shape :', grad_v.shape)
+            print('grad_v0.shape :', grad_v0.shape)
+
             # HIDDEN LAYER
             # Grad. w.r.t input of hidden layer
             grad_wrt_hidden_l_input = grad_wrt_out_l_input.dot(self.V.T) * self.hidden_activation.gradient(hidden_input)
@@ -101,7 +121,8 @@ def main():
 
     # MLP
     clf = MultilayerPerceptron(n_hidden=16,
-                               n_iterations=1000,
+                               n_iterations=1,
+                               # n_iterations=1000,
                                learning_rate=0.01)
 
     clf.fit(X_train, y_train)
@@ -112,7 +133,7 @@ def main():
     print("Accuracy:", accuracy)
 
     # Reduce dimension to two using PCA and plot the results
-    Plot().plot_in_2d(X_test, y_pred, title="Multilayer Perceptron", accuracy=accuracy, legend_labels=np.unique(y))
+    # Plot().plot_in_2d(X_test, y_pred, title="Multilayer Perceptron", accuracy=accuracy, legend_labels=np.unique(y))
 
 
 if __name__ == "__main__":
