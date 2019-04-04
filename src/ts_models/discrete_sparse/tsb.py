@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 # @Time    : 2018/10/19 9:11
 # @Author  : zhengdepeng
-# @concat  : zhengdepeng@jd.com
+# @concat  : zhengdepeng@xxx.com
 # @File    : crost.py.py
 # @Software: PyCharm
 
